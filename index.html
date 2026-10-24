@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Ayo Berhitung!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky-top: #8ED1FC; --sky-bottom: #D7F0FF;
+    --grass: #2F9E8F; --grass-dark: #257F74;
+    --sun: #FFC93C; --coral: #FF6B6B;
+    --card: #FFFDF7; --ink: #2D3142; --ink-soft: #5B6079; --ring: #FFFFFF;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --sky-top: #1B2A41; --sky-bottom: #10182A;
+      --grass: #3FBFA8; --grass-dark: #2E9684;
+      --sun: #FFCE54; --coral: #FF7F7F;
+      --card: #202436; --ink: #F2F3F7; --ink-soft: #AEB3C6; --ring: #2A2F45;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --sky-top: #1B2A41; --sky-bottom: #10182A;
+    --grass: #3FBFA8; --grass-dark: #2E9684;
+    --sun: #FFCE54; --coral: #FF7F7F;
+    --card: #202436; --ink: #F2F3F7; --ink-soft: #AEB3C6; --ring: #2A2F45;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0; min-height: 100%;
+    background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom));
+    font-family: 'Baloo 2', ui-rounded, system-ui, sans-serif;
+    color: var(--ink);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    display: flex; justify-content: center;
+  }
+  .wrap { width: 100%; max-width: 560px; padding: 20px 16px 40px; }
+  header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 14px; }
+  h1 { font-size: 1.5rem; font-weight: 800; margin: 0; }
+  .stats { display:flex; gap:10px; font-weight:700; font-size: 0.95rem; }
+  .pill { background: var(--card); border-radius: 999px; padding: 6px 12px; box-shadow: 0 2px 0 rgba(0,0,0,.08); }
+  .card { background: var(--card); border-radius: 28px; padding: 24px 18px; box-shadow: 0 8px 0 rgba(0,0,0,.08); border: 4px solid var(--ring); }
+  .prompt { text-align:center; font-size: 1.2rem; font-weight:700; margin-bottom: 4px; }
+  .prompt b { color: var(--grass-dark); }
+  .hint { text-align:center; font-weight:600; color: var(--ink-soft); font-size: .92rem; min-height: 1.3em; margin-bottom: 12px; }
+  .itemsBox { display:flex; flex-wrap:wrap; gap:9px; justify-content:center; align-items:center; min-height: 92px; margin-bottom: 20px; font-size: 2.2rem; line-height:1; }
+  .itemsBox span { display:inline-block; animation: pop .35s ease backwards; }
+  .options { display:grid; grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 10px; }
+  .opt { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-family: inherit; padding: 12px 2px; border-radius: 16px; border:none; background: var(--grass); color:#fff; cursor:pointer; box-shadow: 0 4px 0 var(--grass-dark); transition: transform .08s ease; }
+  .opt .oe { font-size: 1.6rem; line-height:1; }
+  .opt .on { font-size: 1.3rem; font-weight:800; line-height:1; }
+  .opt:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--grass-dark); }
+  .opt.correct { background: var(--sun); box-shadow: 0 4px 0 #D9A500; animation: bounce .5s ease; }
+  .opt.wrong { background: var(--coral); animation: shake .4s ease; }
+  .dragWrap { display:flex; flex-direction:column; align-items:center; gap:18px; }
+  .dropZone { width:78px; height:78px; border:3px dashed var(--grass); border-radius:18px; display:flex; align-items:center; justify-content:center; font-size:1.8rem; font-weight:800; color: var(--ink-soft); }
+  .dropZone.filled { border-style:solid; background: var(--sun); color:#fff; }
+  .chipRow { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+  .chip { touch-action:none; cursor:grab; user-select:none; font-family:inherit; font-size:1.3rem; font-weight:800; width:54px; height:54px; border-radius:14px; background:var(--grass); color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 0 var(--grass-dark); position:relative; }
+  .chip.dragging { cursor:grabbing; box-shadow:0 10px 18px rgba(0,0,0,.25); z-index:20; }
+  .feedback { text-align:center; min-height: 28px; margin-top: 14px; font-weight:700; font-size: 1.05rem; color: var(--ink-soft); }
+  .result { text-align:center; }
+  .result h2 { font-size: 1.6rem; margin: 0 0 6px; }
+  .result p { color: var(--ink-soft); font-weight:600; margin: 0 0 18px; }
+  .playBtn { font-family: inherit; font-size: 1.1rem; font-weight:800; padding: 14px 28px; border-radius: 16px; border:none; background: var(--grass); color:#fff; cursor:pointer; box-shadow: 0 4px 0 var(--grass-dark); }
+  .hidden { display:none; }
+  @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+  @keyframes bounce { 0%,100%{transform:scale(1);} 40%{transform:scale(1.12);} }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔢 Ayo Berhitung!</h1>
+    <div class="stats">
+      <span class="pill" id="progress">Soal 1/30</span>
+      <span class="pill" id="scoreDisplay">⭐ 0</span>
+    </div>
+  </header>
+
+  <div class="card" id="game">
+    <div class="prompt" id="promptText">Ada berapa banyak <b><span id="itemEmoji">🍎</span> <span id="itemLabel">apel</span></b> yang ada di gambar?</div>
+    <div class="hint" id="hintText"></div>
+    <div class="itemsBox" id="itemsBox"></div>
+    <div class="options" id="optionsBox"></div>
+    <div class="dragWrap hidden" id="dragWrap">
+      <div class="dropZone" id="dropZone">?</div>
+      <div class="chipRow" id="chipRow"></div>
+    </div>
+    <div class="feedback" id="feedback">&nbsp;</div>
+  </div>
+
+  <div class="card result hidden" id="resultCard">
+    <h2 id="resultTitle">Hebat sekali! 🎉</h2>
+    <p id="finalScore"></p>
+    <button class="playBtn" id="playAgainBtn">Main Lagi</button>
+  </div>
+</div>
+
+<script>
+  const scenes = [
+    [ {emoji:'✏️',label:'pensil',count:4}, {emoji:'🐘',label:'gajah',count:3}, {emoji:'🐑',label:'domba',count:7} ],
+    [ {emoji:'❤️',label:'hati',count:7}, {emoji:'🐸',label:'katak',count:6}, {emoji:'☂️',label:'payung',count:2} ],
+    [ {emoji:'🐭',label:'tikus',count:8}, {emoji:'🐑',label:'domba',count:3}, {emoji:'🐶',label:'anjing',count:6} ],
+    [ {emoji:'🌼',label:'bunga',count:6}, {emoji:'🐷',label:'babi',count:7}, {emoji:'🧁',label:'cupcake',count:8} ],
+    [ {emoji:'🎈',label:'balon',count:8}, {emoji:'🚗',label:'mobil',count:2}, {emoji:'🐢',label:'kura-kura',count:3} ],
+    [ {emoji:'🦓',label:'zebra',count:2}, {emoji:'🐢',label:'kura-kura',count:4}, {emoji:'🐟',label:'ikan',count:3} ],
+    [ {emoji:'🐸',label:'katak',count:2}, {emoji:'🐧',label:'penguin',count:4}, {emoji:'🎁',label:'hadiah',count:5} ],
+    [ {emoji:'🐌',label:'siput',count:6}, {emoji:'🐶',label:'anjing',count:4}, {emoji:'🌼',label:'bunga',count:7} ],
+    [ {emoji:'🧁',label:'cupcake',count:3}, {emoji:'🐱',label:'kucing',count:4}, {emoji:'🐭',label:'tikus',count:7} ],
+    [ {emoji:'🐸',label:'katak',count:4}, {emoji:'🐌',label:'siput',count:7}, {emoji:'🐢',label:'kura-kura',count:5} ],
+    [ {emoji:'🐧',label:'penguin',count:7}, {emoji:'🐵',label:'monyet',count:4}, {emoji:'👟',label:'sepatu',count:2} ],
+    [ {emoji:'⭐',label:'bintang',count:7}, {emoji:'🍪',label:'kue',count:3}, {emoji:'🐴',label:'kuda',count:5} ],
+    [ {emoji:'☂️',label:'payung',count:3}, {emoji:'🦒',label:'jerapah',count:2}, {emoji:'☀️',label:'matahari',count:8} ],
+    [ {emoji:'🐥',label:'anak ayam',count:4}, {emoji:'🐢',label:'kura-kura',count:6}, {emoji:'🐱',label:'kucing',count:3} ],
+    [ {emoji:'🐥',label:'anak ayam',count:8}, {emoji:'🎩',label:'topi',count:4}, {emoji:'🍎',label:'apel',count:3} ],
+    [ {emoji:'❤️',label:'hati',count:5}, {emoji:'🚗',label:'mobil',count:4}, {emoji:'🐨',label:'koala',count:6} ],
+    [ {emoji:'🍊',label:'jeruk',count:2}, {emoji:'🍇',label:'anggur',count:7}, {emoji:'🐶',label:'anjing',count:8} ],
+    [ {emoji:'🌙',label:'bulan',count:6}, {emoji:'☂️',label:'payung',count:5}, {emoji:'🐨',label:'koala',count:2} ],
+    [ {emoji:'🍉',label:'semangka',count:8}, {emoji:'🐻',label:'beruang',count:2}, {emoji:'🌼',label:'bunga',count:7} ],
+    [ {emoji:'☀️',label:'matahari',count:5}, {emoji:'🎩',label:'topi',count:4}, {emoji:'🦓',label:'zebra',count:2} ],
+    [ {emoji:'🐔',label:'ayam',count:8}, {emoji:'🍪',label:'kue',count:3}, {emoji:'🐻',label:'beruang',count:6} ],
+    [ {emoji:'✏️',label:'pensil',count:8}, {emoji:'🍊',label:'jeruk',count:4}, {emoji:'🎁',label:'hadiah',count:3} ],
+    [ {emoji:'🎁',label:'hadiah',count:4}, {emoji:'🦒',label:'jerapah',count:2}, {emoji:'🍇',label:'anggur',count:8} ],
+    [ {emoji:'🐮',label:'sapi',count:8}, {emoji:'🐴',label:'kuda',count:5}, {emoji:'⚽',label:'bola',count:2} ],
+    [ {emoji:'🐰',label:'kelinci',count:6}, {emoji:'👟',label:'sepatu',count:3}, {emoji:'🍌',label:'pisang',count:4} ],
+    [ {emoji:'🐵',label:'monyet',count:7}, {emoji:'⭐',label:'bintang',count:8}, {emoji:'☁️',label:'awan',count:3} ],
+    [ {emoji:'🐥',label:'anak ayam',count:6}, {emoji:'👟',label:'sepatu',count:4}, {emoji:'🎩',label:'topi',count:5} ],
+    [ {emoji:'🐴',label:'kuda',count:2}, {emoji:'🦁',label:'singa',count:4}, {emoji:'🐱',label:'kucing',count:6} ],
+    [ {emoji:'🚗',label:'mobil',count:7}, {emoji:'🦁',label:'singa',count:8}, {emoji:'🐔',label:'ayam',count:2} ],
+    [ {emoji:'🐭',label:'tikus',count:6}, {emoji:'🦓',label:'zebra',count:3}, {emoji:'🐱',label:'kucing',count:4} ],
+  ];
+
+  const singleItems = [
+    {emoji:'🧸',label:'boneka beruang',count:3},
+    {emoji:'🍓',label:'stroberi',count:8},
+    {emoji:'🦊',label:'rubah',count:2},
+    {emoji:'🚲',label:'sepeda',count:3},
+    {emoji:'🐢',label:'kura-kura',count:5},
+    {emoji:'🐼',label:'panda',count:2},
+    {emoji:'🎀',label:'pita',count:8},
+    {emoji:'🦓',label:'zebra',count:2},
+    {emoji:'🐯',label:'harimau',count:5},
+    {emoji:'🦁',label:'singa',count:2},
+    {emoji:'🐓',label:'ayam',count:4},
+    {emoji:'🐧',label:'penguin',count:6},
+    {emoji:'🍉',label:'semangka',count:8},
+    {emoji:'🦌',label:'rusa',count:4},
+    {emoji:'🐮',label:'sapi',count:3},
+    {emoji:'🐒',label:'monyet',count:6},
+    {emoji:'🐘',label:'gajah',count:4},
+    {emoji:'🐑',label:'domba',count:3},
+    {emoji:'🐸',label:'katak',count:5},
+    {emoji:'🐴',label:'kuda',count:7},
+  ];
+
+  const praises = ['Hebat sekali! 🎉','Pintar! 🌟','Betul sekali! 👏','Keren! ✨'];
+
+  let deck = buildDeck();
+  let idx = 0, score = 0, locked = false;
+
+  const progressEl = document.getElementById('progress');
+  const scoreEl = document.getElementById('scoreDisplay');
+  const itemLabelEl = document.getElementById('itemLabel');
+  const itemEmojiEl = document.getElementById('itemEmoji');
+  const hintEl = document.getElementById('hintText');
+  const itemsBoxEl = document.getElementById('itemsBox');
+  const optionsBoxEl = document.getElementById('optionsBox');
+  const dragWrapEl = document.getElementById('dragWrap');
+  const dropZoneEl = document.getElementById('dropZone');
+  const chipRowEl = document.getElementById('chipRow');
+  const feedbackEl = document.getElementById('feedback');
+  const gameCard = document.getElementById('game');
+  const resultCard = document.getElementById('resultCard');
+  const finalScoreEl = document.getElementById('finalScore');
+  const resultTitleEl = document.getElementById('resultTitle');
+
+  function shuffleArr(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+  function buildDeck(){
+    const mixedPicks = shuffleArr([...scenes.keys()]).slice(0,10).map(i => ({ mode:'mixed', data: scenes[i] }));
+    const singleShuffled = shuffleArr([...singleItems.keys()]);
+    const simplePicks = singleShuffled.slice(0,10).map(i => ({ mode:'simple', data: singleItems[i] }));
+    const dragPicks = singleShuffled.slice(10,20).map(i => ({ mode:'drag', data: singleItems[i] }));
+    return shuffleArr([...mixedPicks, ...simplePicks, ...dragPicks]);
+  }
+
+  function fillItemsBox(emojiList){
+    itemsBoxEl.innerHTML = '';
+    emojiList.forEach((em,i) => {
+      const span = document.createElement('span');
+      span.textContent = em;
+      span.style.animationDelay = (i*0.03)+'s';
+      itemsBoxEl.appendChild(span);
+    });
+  }
+
+  function renderTapOptions(opts, withIcon){
+    optionsBoxEl.innerHTML = '';
+    opts.forEach(o => {
+      const btn = document.createElement('button');
+      btn.className = 'opt';
+      btn.innerHTML = withIcon ? `<span class="oe">${o.emoji}</span><span class="on">${o.num}</span>` : `<span class="on">${o.num}</span>`;
+      btn.addEventListener('click', () => handleCorrectCheck(o.correct, btn));
+      optionsBoxEl.appendChild(btn);
+    });
+  }
+
+  function renderDragOptions(opts, correctVal){
+    optionsBoxEl.classList.add('hidden');
+    dragWrapEl.classList.remove('hidden');
+    dropZoneEl.textContent = '?';
+    dropZoneEl.classList.remove('filled');
+    chipRowEl.innerHTML = '';
+    opts.forEach(o => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = o.num;
+      chip.dataset.value = o.num;
+      chipRowEl.appendChild(chip);
+      setupChipDrag(chip, correctVal);
+    });
+  }
+
+  function setupChipDrag(chip, correctVal){
+    let dragging = false, startX = 0, startY = 0;
+    chip.addEventListener('pointerdown', (e) => {
+      if (locked) return;
+      dragging = true;
+      chip.setPointerCapture(e.pointerId);
+      startX = e.clientX; startY = e.clientY;
+      chip.style.transition = 'none';
+      chip.classList.add('dragging');
+    });
+    chip.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      chip.style.transform = `translate(${e.clientX-startX}px, ${e.clientY-startY}px)`;
+    });
+    chip.addEventListener('pointerup', (e) => {
+      if (!dragging) return;
+      dragging = false;
+      chip.classList.remove('dragging');
+      chip.style.transition = 'transform .25s ease';
+      const cr = chip.getBoundingClientRect(), zr = dropZoneEl.getBoundingClientRect();
+      const cx = cr.left + cr.width/2, cy = cr.top + cr.height/2;
+      const over = cx > zr.left-14 && cx < zr.right+14 && cy > zr.top-14 && cy < zr.bottom+14;
+      const val = parseInt(chip.dataset.value, 10);
+      chip.style.transform = 'translate(0,0)';
+      if (over && val === correctVal) {
+        handleCorrectCheck(true, chip);
+      } else if (over) {
+        feedbackEl.textContent = 'Hampir, coba lagi! 💪';
+      }
+    });
+  }
+
+  function renderMixed(scene){
+    hintEl.textContent = '';
+    const target = scene[Math.floor(Math.random()*scene.length)];
+    itemLabelEl.textContent = target.label;
+    itemEmojiEl.textContent = target.emoji;
+    let combined = [];
+    scene.forEach(it => { for (let i=0;i<it.count;i++) combined.push(it.emoji); });
+    fillItemsBox(shuffleArr(combined));
+    const opts = [{ emoji: target.emoji, num: target.count, correct: true }];
+    scene.filter(it => it !== target).forEach(it => opts.push({ emoji: it.emoji, num: it.count, correct: false }));
+    let wrongNum;
+    do { wrongNum = target.count + (Math.floor(Math.random()*5) - 2); } while (wrongNum === target.count || wrongNum < 1 || wrongNum > 10);
+    opts.push({ emoji: target.emoji, num: wrongNum, correct: false });
+    renderTapOptions(shuffleArr(opts), true);
+  }
+
+  function renderSingle(item, drag){
+    hintEl.textContent = drag ? 'Geser angka yang tepat ke kotak ⬇️' : '';
+    itemLabelEl.textContent = item.label;
+    itemEmojiEl.textContent = item.emoji;
+    fillItemsBox(Array(item.count).fill(item.emoji));
+    const vals = new Set([item.count]);
+    let guard = 0;
+    const want = drag ? 4 : 3;
+    while (vals.size < want && guard < 50) {
+      guard++;
+      const v = item.count + (Math.floor(Math.random()*7) - 3);
+      if (v >= 1 && v <= 10) vals.add(v);
+    }
+    const opts = shuffleArr([...vals]).map(v => ({ num: v, correct: v === item.count }));
+    if (drag) renderDragOptions(opts, item.count);
+    else renderTapOptions(opts, false);
+  }
+
+  function renderQuestion(){
+    locked = false;
+    feedbackEl.innerHTML = '&nbsp;';
+    optionsBoxEl.classList.remove('hidden');
+    dragWrapEl.classList.add('hidden');
+    const q = deck[idx];
+    progressEl.textContent = `Soal ${idx+1}/${deck.length}`;
+    if (q.mode === 'mixed') renderMixed(q.data);
+    else if (q.mode === 'simple') renderSingle(q.data, false);
+    else renderSingle(q.data, true);
+  }
+
+  function handleCorrectCheck(isCorrect, el){
+    if (locked) return;
+    if (isCorrect) {
+      locked = true;
+      score++;
+      scoreEl.textContent = `⭐ ${score}`;
+      el.classList.add('correct');
+      if (!dragWrapEl.classList.contains('hidden')) {
+        dropZoneEl.textContent = el.dataset.value;
+        dropZoneEl.classList.add('filled');
+      }
+      feedbackEl.textContent = praises[Math.floor(Math.random()*praises.length)];
+      setTimeout(() => { idx++; if (idx < deck.length) renderQuestion(); else showResult(); }, 1100);
+    } else {
+      el.classList.add('wrong');
+      feedbackEl.textContent = 'Hampir, coba lagi! 💪';
+      setTimeout(() => el.classList.remove('wrong'), 450);
+    }
+  }
+
+  function showResult(){
+    gameCard.classList.add('hidden');
+    resultCard.classList.remove('hidden');
+    resultTitleEl.textContent = score === deck.length ? 'Sempurna! 🏆' : 'Hebat sekali! 🎉';
+    finalScoreEl.textContent = `Skor kamu: ${score} dari ${deck.length} ⭐`;
+  }
+
+  document.getElementById('playAgainBtn').addEventListener('click', () => {
+    deck = buildDeck();
+    idx = 0; score = 0;
+    scoreEl.textContent = '⭐ 0';
+    resultCard.classList.add('hidden');
+    gameCard.classList.remove('hidden');
+    renderQuestion();
+  });
+
+  renderQuestion();
+</script>
+</body>
+</html>
